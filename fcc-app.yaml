@@ -1,0 +1,106 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: frydays-dev-app
+    tier: front-end
+    type: app
+    env: production
+  name: frydays-app
+  namespace: frydays-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress-app
+  strategy:
+    type: Recreate 
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: wordpress-app
+    spec:
+      initContainers:
+      - image: ubuntu
+        name: env-init
+        env:
+        - name: GIT_USER
+          valueFrom:
+            secretKeyRef:
+              name: git-pass
+              key: git-user
+        - name: GIT_REPO
+          valueFrom:
+            secretKeyRef:
+              name: git-pass
+              key: git-repo
+        - name: GIT_PASS
+          valueFrom:
+            secretKeyRef:
+              name: git-pass
+              key: git-pass
+        - name: WORDPRESS_DB_HOST
+          value: wordpress-db-svc.bizkt.svc    
+        - name: WORDPRESS_DB_NAME
+          value: frydays_dev
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: root-pass
+        command: ["/scripts/app-init.sh"]
+        volumeMounts:
+        - name: app-init-script
+          mountPath: /scripts
+        - name: wordpress-persistent-storage
+          mountPath: /var/www/html
+      containers:
+      - image: wordpress
+        name: wordpress-app
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: wordpress-db-svc.bizkt.svc
+        - name: WORDPRESS_DB_NAME
+          value: frydays_dev
+        - name:  WORDPRESS_DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: wordpress-pass
+              key: wordpress-user
+        - name: WORDPRESS_DB_PASSWORD 
+          valueFrom:
+            secretKeyRef:
+              name: wordpress-pass
+              key: wordpress-pass
+        resources:
+          requests:
+            memory: "100Mi"
+          limits:
+            memory: "250Mi"
+        ports:
+        - containerPort: 80
+          name: wordpress-app
+        volumeMounts:
+        - name: wordpress-persistent-storage
+          mountPath: /var/www/html
+      volumes:
+      - name: app-init-script
+        configMap:
+          name: app-init
+          defaultMode: 0744
+      - name: wordpress-persistent-storage
+        persistentVolumeClaim:
+          claimName: wordpress-pv-claim
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: workload
+                operator: In
+                values: 
+                - app
+                - apps

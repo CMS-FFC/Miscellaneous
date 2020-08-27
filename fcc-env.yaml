@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    app: wordpress-env
+    tier: all-tiers
+    type: util
+    env: production
+  name: wordpress-env-init
+  namespace: frydays-dev
+spec:
+  restartPolicy: Never
+  containers:
+  - image: ubuntu
+    name: env-init
+    env:
+    - name: GIT_USER
+      valueFrom:
+        secretKeyRef:
+          name: git-pass
+          key: git-user
+    - name: GIT_REPO
+      valueFrom:
+        secretKeyRef:
+          name: git-pass
+          key: git-repo
+    - name: GIT_PASS
+      valueFrom:
+        secretKeyRef:
+          name: git-pass
+          key: git-pass
+    - name: WORDPRESS_DB_HOST
+      value: wordpress-db-svc.bizkt.svc    
+    - name: WORDPRESS_DB_NAME
+      value: frydays_dev
+    - name: MYSQL_ROOT_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: mysql-pass
+          key: root-pass
+    command: ["/scripts/app-init.sh"]
+    volumeMounts:
+    - name: app-init-script
+      mountPath: /scripts
+    - name: wordpress-persistent-storage
+      mountPath: /var/www/html
+  volumes:
+  - name: app-init-script
+    configMap:
+      name: app-init
+      defaultMode: 0744
+  - name: wordpress-persistent-storage
+    persistentVolumeClaim:
+      claimName: wordpress-pv-claim
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
