@@ -23,16 +23,17 @@ if ($_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https')
 
 // ** MySQL settings - You can get this info from your web host ** //
 /** The name of the database for WordPress */
-define( 'DB_NAME', 'frydays_dev');
+//Databases configs for sidecar container
+define( 'DB_NAME', 'frydays');
 
 /** MySQL database username */
-define( 'DB_USER', 'wordpress');
+define( 'DB_USER', 'root');
 
 /** MySQL database password */
-define( 'DB_PASSWORD', 'shamrock');
+define( 'DB_PASSWORD', 'passwd');
 
 /** MySQL hostname */
-define( 'DB_HOST', 'wordpress-db-svc.bizkt.svc');
+define( 'DB_HOST', '127.0.0.1');
 
 /** Database Charset to use in creating database tables. */
 define( 'DB_CHARSET', 'utf8');
@@ -41,7 +42,7 @@ define( 'DB_CHARSET', 'utf8');
 define( 'DB_COLLATE', '');
 define( 'WP_ALLOW_REPAIR', true );
 /**#@+
- * Authentication Unique Keys and Salts.
+ * Authentication Unique Keys and Salts.s
  *
  * Change these to different unique phrases!
  * You can generate these using the {@link https://api.wordpress.org/secret-key/1.1/salt/ WordPress.org secret-key service}

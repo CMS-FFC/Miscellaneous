@@ -1,0 +1,70 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: frydays
+    tier: all
+    type: app-db
+    env: dev
+  name: frydays
+  namespace: fcc-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress
+      db: mysql
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        db: mysql
+    spec:
+      imagePullSecrets:
+        - name: shipping
+      containers:
+      - image: shipping.bizkt.com.au:443/fccstg/db
+        imagePullPolicy: Always
+        name: db
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-pass
+              key: db-pass
+        ports:
+        - containerPort: 3306
+          name: wordpress-db
+        resources:
+          requests:
+            memory: "100Mi"
+          limits:
+            memory: "500Mi"
+      - image: shipping.bizkt.com.au:443/fccstg/app
+        imagePullPolicy: Always
+        name: app
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: 127.0.0.1:3306
+        - name: WORDPRESS_DB_NAME
+          value: frydays
+        - name:  WORDPRESS_DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-pass
+              key: db-user
+        - name: WORDPRESS_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-pass
+              key: db-pass
+        resources:
+          requests:
+            memory: "100Mi"
+          limits:
+            memory: "400Mi"
+        ports:
+        - containerPort: 80
+          name: wordpress-app
